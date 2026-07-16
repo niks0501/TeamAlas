@@ -8,6 +8,7 @@ let currentCatBreed = null;
 let upvoteCount = 0;
 let downvoteCount = 0;
 let breedsData = [];
+let pendingConfirmAction = null;
 
 // DOM element references
 const dom = {
@@ -26,6 +27,11 @@ const dom = {
     refreshFavorites: null,
     fullScreenOverlay: null,
     fullScreenImage: null,
+    confirmModal: null,
+    confirmTitle: null,
+    confirmMessage: null,
+    confirmCancelButton: null,
+    confirmActionButton: null,
 };
 
 function showError(message) {
@@ -36,6 +42,21 @@ function showError(message) {
 function clearError() {
     dom.errorMessage.textContent = "";
     dom.errorMessage.classList.add("hidden");
+}
+
+function showConfirmation({ title, message, confirmText, onConfirm }) {
+    pendingConfirmAction = onConfirm;
+    dom.confirmTitle.textContent = title;
+    dom.confirmMessage.textContent = message;
+    dom.confirmActionButton.textContent = confirmText;
+    dom.confirmModal.classList.remove("hidden");
+    dom.confirmModal.classList.add("flex");
+}
+
+function hideConfirmation() {
+    pendingConfirmAction = null;
+    dom.confirmModal.classList.add("hidden");
+    dom.confirmModal.classList.remove("flex");
 }
 
 function getSelectedMediaType() {
@@ -161,11 +182,25 @@ async function favoriteCurrentCat() {
             image: { id: currentCatId, url: currentCatUrl }
         });
 
-        fetchRandomCat();
+        await fetchRandomCat();
     } catch (error) {
         console.error("Error favoriting cat:", error);
         showError("Could not save this cat to favorites. Please try again.");
     }
+}
+
+function confirmFavoriteCurrentCat() {
+    if (!currentCatId) {
+        showError("No cat is loaded yet to add to favorites.");
+        return;
+    }
+
+    showConfirmation({
+        title: "Save this cat?",
+        message: "This will add the current cat to your favorites gallery.",
+        confirmText: "Save Cat",
+        onConfirm: favoriteCurrentCat,
+    });
 }
 
 async function loadFavorites() {
@@ -262,10 +297,31 @@ function wireEvents() {
 
     dom.refreshFavorites.addEventListener("click", loadFavorites);
     document.getElementById("next-button").addEventListener("click", fetchRandomCat);
-    document.getElementById("favorite-button").addEventListener("click", favoriteCurrentCat);
+    document.getElementById("favorite-button").addEventListener("click", confirmFavoriteCurrentCat);
     document.getElementById("upvote-button").addEventListener("click", () => voteCurrentCat(1));
     document.getElementById("downvote-button").addEventListener("click", () => voteCurrentCat(0));
     dom.fullScreenOverlay.addEventListener("click", () => toggleFullscreen(false));
+    dom.confirmCancelButton.addEventListener("click", hideConfirmation);
+    dom.confirmActionButton.addEventListener("click", async () => {
+        const action = pendingConfirmAction;
+        hideConfirmation();
+
+        if (!action) {
+            return;
+        }
+
+        try {
+            await action();
+        } catch (error) {
+            console.error("Confirmation action failed:", error);
+            showError("Something went wrong while completing that action.");
+        }
+    });
+    dom.confirmModal.addEventListener("click", (event) => {
+        if (event.target === dom.confirmModal) {
+            hideConfirmation();
+        }
+    });
 }
 
 function initializeDom() {
@@ -284,15 +340,33 @@ function initializeDom() {
     dom.refreshFavorites = document.getElementById("refresh-favorites");
     dom.fullScreenOverlay = document.getElementById("fullscreen-overlay");
     dom.fullScreenImage = document.getElementById("fullscreen-image");
+    dom.confirmModal = document.getElementById("confirm-modal");
+    dom.confirmTitle = document.getElementById("confirm-modal-title");
+    dom.confirmMessage = document.getElementById("confirm-modal-message");
+    dom.confirmCancelButton = document.getElementById("confirm-cancel-button");
+    dom.confirmActionButton = document.getElementById("confirm-action-button");
 }
 
 async function initializeApp() {
-    initializeDom();
-    wireEvents();
-    await fetchBreeds();
-    await fetchRandomCat();
-    await loadFavorites();
-    updateVotingStats();
+    try {
+        initializeDom();
+        wireEvents();
+        window.addEventListener("error", (event) => {
+            console.error("Unhandled error:", event.error || event.message);
+            showError("An unexpected error occurred. Please refresh the page.");
+        });
+        window.addEventListener("unhandledrejection", (event) => {
+            console.error("Unhandled promise rejection:", event.reason);
+            showError("A request failed unexpectedly. Please try again.");
+        });
+        await fetchBreeds();
+        await fetchRandomCat();
+        await loadFavorites();
+        updateVotingStats();
+    } catch (error) {
+        console.error("App initialization failed:", error);
+        showError("The app could not finish loading. Please refresh the page.");
+    }
 }
 
 document.addEventListener("DOMContentLoaded", initializeApp);

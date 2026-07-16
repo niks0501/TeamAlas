@@ -155,6 +155,21 @@
         <img id="fullscreen-image" src="" alt="Fullscreen cat" />
     </div>
 
+    <div id="confirm-modal" class="fixed inset-0 z-50 hidden items-center justify-center bg-slate-950/70 px-4">
+        <div class="w-full max-w-md rounded-3xl bg-white p-6 shadow-2xl" role="dialog" aria-modal="true" aria-labelledby="confirm-modal-title" aria-describedby="confirm-modal-message">
+            <h2 id="confirm-modal-title" class="text-xl font-semibold text-slate-900">Confirm action</h2>
+            <p id="confirm-modal-message" class="mt-3 text-sm leading-6 text-slate-600">Are you sure you want to continue?</p>
+            <div class="mt-6 flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
+                <button id="confirm-cancel-button" type="button" class="rounded-2xl bg-slate-100 px-4 py-3 text-sm font-semibold text-slate-700 transition hover:bg-slate-200">
+                    Cancel
+                </button>
+                <button id="confirm-action-button" type="button" class="rounded-2xl bg-indigo-600 px-4 py-3 text-sm font-semibold text-white transition hover:bg-indigo-700">
+                    Confirm
+                </button>
+            </div>
+        </div>
+    </div>
+
     <footer class="border-t border-slate-200 bg-white py-6 text-center text-sm text-slate-500">
         Built for a public API assignment with The Cat API.
     </footer>
