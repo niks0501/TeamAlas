@@ -9,6 +9,9 @@ let upvoteCount = 0;
 let downvoteCount = 0;
 let breedsData = [];
 let pendingConfirmAction = null;
+let allFavorites = [];
+let carouselIndex = 0;
+const itemsPerPage = 4;
 
 // DOM element references
 const dom = {
@@ -32,6 +35,8 @@ const dom = {
     confirmMessage: null,
     confirmCancelButton: null,
     confirmActionButton: null,
+    scrollLeftButton: null,
+    scrollRightButton: null,
 };
 
 function showError(message) {
@@ -211,19 +216,57 @@ async function loadFavorites() {
 
         if (!response.ok) throw new Error("Could not load favorites.");
 
-        const favorites = await response.json();
+        allFavorites = await response.json();
+        carouselIndex = 0;
         dom.favoritesGallery.innerHTML = "";
 
-        if (!favorites.length) {
-            dom.favoritesGallery.innerHTML = `<p class=\"col-span-full rounded-3xl border border-slate-200 bg-slate-50 p-6 text-center text-sm text-slate-500\">Your favorites gallery is empty. Add some cats and they'll appear here.</p>`;
+        if (!allFavorites.length) {
+            dom.favoritesGallery.innerHTML = `<p class="col-span-full rounded-3xl border border-slate-200 bg-slate-50 p-6 text-center text-sm text-slate-500">Your favorites gallery is empty. Add some cats and they'll appear here.</p>`;
+            dom.scrollLeftButton.classList.add("hidden");
+            dom.scrollRightButton.classList.add("hidden");
             return;
         }
 
-        favorites.forEach(renderFavoriteThumbnail);
+        displayCarouselPage();
+        updateCarouselButtons();
     } catch (error) {
         console.error("Error loading favorites:", error);
         showError("Unable to load favorites at this time.");
     }
+}
+
+function displayCarouselPage() {
+    dom.favoritesGallery.innerHTML = "";
+    const start = carouselIndex * itemsPerPage;
+    const end = start + itemsPerPage;
+    const pageItems = allFavorites.slice(start, end);
+    pageItems.forEach(renderFavoriteThumbnail);
+}
+
+function updateCarouselButtons() {
+    const totalPages = Math.ceil(allFavorites.length / itemsPerPage);
+    const hasMultiplePages = totalPages > 1;
+    
+    dom.scrollLeftButton.classList.toggle("hidden", !hasMultiplePages);
+    dom.scrollRightButton.classList.toggle("hidden", !hasMultiplePages);
+    
+    if (hasMultiplePages) {
+        dom.scrollLeftButton.disabled = carouselIndex === 0;
+        dom.scrollRightButton.disabled = carouselIndex === totalPages - 1;
+    }
+}
+
+function navigateCarousel(direction) {
+    const totalPages = Math.ceil(allFavorites.length / itemsPerPage);
+    
+    if (direction === "left" && carouselIndex > 0) {
+        carouselIndex--;
+    } else if (direction === "right" && carouselIndex < totalPages - 1) {
+        carouselIndex++;
+    }
+    
+    displayCarouselPage();
+    updateCarouselButtons();
 }
 
 function renderFavoriteThumbnail(favorite) {
@@ -243,7 +286,9 @@ function renderFavoriteThumbnail(favorite) {
         toggleFullscreen(true, imageUrl);
     });
 
-    dom.favoritesGallery.appendChild(thumb);
+    if (dom.favoritesGallery) {
+        dom.favoritesGallery.appendChild(thumb);
+    }
 }
 
 async function voteCurrentCat(value) {
@@ -298,6 +343,10 @@ function wireEvents() {
     dom.refreshFavorites.addEventListener("click", loadFavorites);
     document.getElementById("next-button").addEventListener("click", fetchRandomCat);
     document.getElementById("favorite-button").addEventListener("click", confirmFavoriteCurrentCat);
+    
+    dom.scrollLeftButton.addEventListener("click", () => navigateCarousel("left"));
+    dom.scrollRightButton.addEventListener("click", () => navigateCarousel("right"));
+    
     document.getElementById("upvote-button").addEventListener("click", () => voteCurrentCat(1));
     document.getElementById("downvote-button").addEventListener("click", () => voteCurrentCat(0));
     dom.fullScreenOverlay.addEventListener("click", () => toggleFullscreen(false));
@@ -345,6 +394,8 @@ function initializeDom() {
     dom.confirmMessage = document.getElementById("confirm-modal-message");
     dom.confirmCancelButton = document.getElementById("confirm-cancel-button");
     dom.confirmActionButton = document.getElementById("confirm-action-button");
+    dom.scrollLeftButton = document.getElementById("scroll-left");
+    dom.scrollRightButton = document.getElementById("scroll-right");
 }
 
 async function initializeApp() {

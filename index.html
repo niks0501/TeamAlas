@@ -147,7 +147,15 @@
                     Refresh Gallery
                 </button>
             </div>
-            <div id="favorites-gallery" class="grid gap-4 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4"></div>
+            <div class="relative">
+                <div id="favorites-gallery" class="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-4"></div>
+                <button id="scroll-left" class="absolute left-0 top-1/2 -translate-y-1/2 -translate-x-12 rounded-full bg-indigo-600 p-3 text-white transition hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed hidden">
+                    ◀
+                </button>
+                <button id="scroll-right" class="absolute right-0 top-1/2 -translate-y-1/2 translate-x-12 rounded-full bg-indigo-600 p-3 text-white transition hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed hidden">
+                    ▶
+                </button>
+            </div>
         </section>
     </main>
 
