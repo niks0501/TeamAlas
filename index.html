@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Cat Dashboard & Favorites</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        html { scroll-behavior: smooth; }
+        #fullscreen-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(15, 23, 42, 0.82);
+            display: none;
+            place-items: center;
+            z-index: 50;
+        }
+        #fullscreen-overlay.active { display: grid; }
+        #fullscreen-overlay img {
+            max-width: 95%;
+            max-height: 95%;
+            border-radius: 1rem;
+            box-shadow: 0 20px 60px rgba(15, 23, 42, 0.35);
+        }
+    </style>
+</head>
+<body class="bg-slate-100 min-h-screen text-slate-800">
+    <header class="w-full bg-white border-b border-slate-200 shadow-sm">
+        <div class="mx-auto max-w-6xl px-4 py-5 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <div>
+                <h1 class="text-2xl font-bold text-slate-900">🐾 Cat Dashboard</h1>
+                <p class="text-sm text-slate-500">The Cat API project with breed search, favorites, and voting.</p>
+            </div>
+            <span class="text-sm text-slate-500">API integration with GET and POST requests</span>
+        </div>
+    </header>
+
+    <main class="mx-auto max-w-6xl px-4 py-8 space-y-8">
+        <div id="error-message" class="hidden w-full rounded-2xl border border-rose-200 bg-rose-50 px-5 py-4 text-center text-rose-700"></div>
+
+        <section class="grid gap-6 lg:grid-cols-[1.8fr_1fr]">
+            <div class="space-y-6">
+                <div class="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
+                    <div class="mb-6 grid gap-4 sm:grid-cols-2">
+                        <div>
+                            <label for="breed-select" class="block text-sm font-semibold text-slate-700">Breed Selector</label>
+                            <select id="breed-select" class="mt-2 w-full rounded-2xl border border-slate-300 bg-slate-50 px-4 py-3 text-slate-900 shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-100">
+                                <option value="">Random Cat</option>
+                            </select>
+                        </div>
+
+                        <div>
+                            <span class="block text-sm font-semibold text-slate-700">Media Type</span>
+                            <div class="mt-2 flex flex-wrap items-center gap-3">
+                                <label class="inline-flex items-center gap-2 text-sm text-slate-700">
+                                    <input type="radio" name="media-type" value="all" checked class="h-4 w-4 accent-indigo-600" />
+                                    All
+                                </label>
+                                <label class="inline-flex items-center gap-2 text-sm text-slate-700">
+                                    <input type="radio" name="media-type" value="static" class="h-4 w-4 accent-indigo-600" />
+                                    Static Images
+                                </label>
+                                <label class="inline-flex items-center gap-2 text-sm text-slate-700">
+                                    <input type="radio" name="media-type" value="gif" class="h-4 w-4 accent-indigo-600" />
+                                    Animated GIFs
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="relative overflow-hidden rounded-[2rem] border border-slate-200 bg-slate-100 shadow-inner">
+                        <img id="cat-image" src="https://placekitten.com/1200/800" alt="Current selected cat" class="h-[24rem] w-full object-cover transition-transform duration-300 hover:scale-105" />
+                        <div class="absolute inset-x-0 bottom-0 bg-gradient-to-t from-slate-950/70 to-transparent p-5 text-white">
+                            <p id="current-cat-label" class="text-sm uppercase tracking-[0.18em] text-slate-200">Current cat</p>
+                            <p id="current-breed-label" class="text-xl font-semibold">Random Cat</p>
+                        </div>
+                    </div>
+
+                    <div class="mt-5 grid gap-3 sm:grid-cols-3">
+                        <button id="next-button" class="rounded-2xl bg-slate-100 px-4 py-3 text-sm font-semibold text-slate-700 transition hover:bg-slate-200">
+                            Next Cat ➡️
+                        </button>
+                        <button id="favorite-button" class="rounded-2xl bg-indigo-600 px-4 py-3 text-sm font-semibold text-white transition hover:bg-indigo-700">
+                            Favorite ❤️
+                        </button>
+                        <div class="flex gap-3">
+                            <button id="upvote-button" class="flex-1 rounded-2xl bg-emerald-600 px-4 py-3 text-sm font-semibold text-white transition hover:bg-emerald-700">
+                                👍 Upvote
+                            </button>
+                            <button id="downvote-button" class="flex-1 rounded-2xl bg-rose-600 px-4 py-3 text-sm font-semibold text-white transition hover:bg-rose-700">
+                                👎 Downvote
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <aside class="space-y-6">
+                <div class="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
+                    <h2 class="text-xl font-semibold text-slate-900">Breed Facts</h2>
+                    <div class="mt-5 space-y-4 text-sm text-slate-700">
+                        <div>
+                            <p class="font-semibold text-slate-900">Breed Name</p>
+                            <p id="breed-name" class="mt-2 text-slate-600">Random selection uses no breed facts.</p>
+                        </div>
+                        <div>
+                            <p class="font-semibold text-slate-900">Temperament</p>
+                            <p id="breed-temperament" class="mt-2 text-slate-600">Choose a breed to view its temperament.</p>
+                        </div>
+                        <div>
+                            <p class="font-semibold text-slate-900">Life Span</p>
+                            <p id="breed-life-span" class="mt-2 text-slate-600">Select a breed for lifespan details.</p>
+                        </div>
+                        <div>
+                            <p class="font-semibold text-slate-900">Origin</p>
+                            <p id="breed-origin" class="mt-2 text-slate-600">Origin country will appear here.</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
+                    <h2 class="text-xl font-semibold text-slate-900">Voting Stats</h2>
+                    <div class="mt-5 space-y-3 text-sm text-slate-700">
+                        <div class="rounded-2xl bg-slate-50 p-4">
+                            <p class="font-semibold text-slate-900">Upvotes Given</p>
+                            <p id="vote-up-count" class="mt-2 text-2xl font-bold text-emerald-600">0</p>
+                        </div>
+                        <div class="rounded-2xl bg-slate-50 p-4">
+                            <p class="font-semibold text-slate-900">Downvotes Given</p>
+                            <p id="vote-down-count" class="mt-2 text-2xl font-bold text-rose-600">0</p>
+                        </div>
+                    </div>
+                </div>
+            </aside>
+        </section>
+
+        <section id="favorites-section" class="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
+            <div class="mb-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                <div>
+                    <h2 class="text-xl font-semibold text-slate-900">Favorites Gallery</h2>
+                    <p class="mt-1 text-sm text-slate-500">Click a thumbnail to open the full-sized cat image.</p>
+                </div>
+                <button id="refresh-favorites" class="rounded-2xl bg-slate-100 px-4 py-3 text-sm font-semibold text-slate-700 transition hover:bg-slate-200">
+                    Refresh Gallery
+                </button>
+            </div>
+            <div id="favorites-gallery" class="grid gap-4 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4"></div>
+        </section>
+    </main>
+
+    <div id="fullscreen-overlay" onclick="toggleFullscreen(false)">
+        <img id="fullscreen-image" src="" alt="Fullscreen cat" />
+    </div>
+
+    <footer class="border-t border-slate-200 bg-white py-6 text-center text-sm text-slate-500">
+        Built for a public API assignment with The Cat API.
+    </footer>
+
+    <script src="app.js"></script>
+</body>
+</html>
